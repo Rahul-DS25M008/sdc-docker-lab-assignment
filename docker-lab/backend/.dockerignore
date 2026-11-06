@@ -1,0 +1,26 @@
+
+# Environment variables and credentials
+.env
+.env.*
+!.env.example
+
+# Local Python environments
+.venv/
+venv/
+env/
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# Runtime-generated files
+images/
+*.log
+
+# Local development files
+.ipynb_checkpoints/
+.DS_Store
+.git/
