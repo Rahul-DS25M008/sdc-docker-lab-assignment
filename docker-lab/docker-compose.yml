@@ -20,6 +20,10 @@ services:
       STABILITY_KEY: "${STABILITY_KEY:?STABILITY_KEY is missing}"
       PROFANITY_PROMPT_FILE: /app/profanity_prompt.txt
       UPLOAD_FOLDER: /app/images
+      REDIS_URL: redis://redis:6379/0
+    
+    volumes:
+      - generated_images:/app/images
 
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/docs', timeout=3).read()"]
@@ -51,4 +55,44 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+  
+  # Redis queue for asynchronous image generation (v3)
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+
+    volumes:
+      - redis_data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  # RQ worker that processes image-generation jobs
+  worker:
+    image: sdc-backend:compose
+    command: ["python", "worker.py"]
+
+    environment:
+      STABILITY_KEY: "${STABILITY_KEY:?STABILITY_KEY is missing}"
+      REDIS_URL: redis://redis:6379/0
+      UPLOAD_FOLDER: /app/images
+
+    volumes:
+      - generated_images:/app/images
+
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  
+volumes:
+  generated_images:
+  redis_data:
+
+
 
